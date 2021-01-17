@@ -1,0 +1,132 @@
+---
+title: "データの可視化（ヒストグラム）"
+date: "`r Sys.Date()`"
+author: Sort
+output:
+  rmdformats::readthedown:
+    highlight: kate
+    self_contained: true
+---
+
+```{css, echo=FALSE}
+#content {
+    max-width: 100%;
+}
+```
+
+```{r, include=FALSE}
+library(rmdformats)
+
+knitr::opts_chunk$set(warning = F,
+                      message = F,
+                      comment = "",
+                      fig.align = "center")
+```
+
+# 使用するパッケージ
+
+```{r}
+library(tidyverse)
+library(magrittr)
+```
+
+# ggplot2 の theme をあらかじめ設定しておく
+
+```{r}
+theme_set(theme_minimal(base_size = 15))
+```
+
+# 使用するデータ
+
+```{r}
+data <- read_csv("Data/House_of_Councilors_1996_2017.csv")
+```
+
+# データ内の変数名を確認する
+
+```{r}
+names(data)
+```
+
+# 2015年にデータを絞る
+
+```{r}
+data_2005 <- data %>% filter(year == 2005) # 2005年のデータに絞る
+```
+
+# 上位4政党に絞る
+
+今回は簡単のために上位4政党に絞る。
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = party_jpn)) +
+  geom_bar() +
+  labs(x = "")
+```
+
+```{r}
+data_2005 %<>% filter(party_jpn %in% c("自民党", "民主党", "社民党", "共産党"))
+```
+
+階級の幅を決めるときに、スタージェスの公式というものを使うらしい...
+
+```{r}
+# スタージェスの公式: k (階級の数) = 1 + log₂n (n = データ数)
+bw <- round(1 + log2(count(data_2005)), 0) %>% as.integer()
+```
+
+# ヒストグラム
+
+## 何の変哲もないヒストグラム
+
+exppv: 候補者が有権者1人あたりに使う選挙費用
+
+右方向に裾野が広がっていることがわかる。
+
+```{r}
+data_2005 %>% 
+  ggplot(., aes(x = exppv)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = bw,
+                 color = "black", fill = "grey") +
+  labs(x = "有権者1人あたりに使う選挙費用") 
+```
+
+## 各政党ごとに確率密度を描写する
+
+政党ごとに確率密度を見ることで、歪みの原因を特定できる。  
+今回は共産党と社民党が歪みの原因のように見える。政党の大きさで選挙費用に差が出るのだろう。  
+ヒストグラムを細かく見ることで、クラスタごとの特性を把握することができる。  
+散布図を作る際に層化してみると、傾きに違いが出るかもしれない。
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = bw,
+                 color = "black", fill = "grey") +
+  geom_density(aes(fill = party_jpn), alpha = .1) 
+```
+
+## 政党ごとに層化した散布図
+
+層化した散布図を見ると、自民党・民主党グループ、共産党・社民党グループで選挙費用が得票率に与える影響が違うことが分かる。  
+自民党と民主党: 傾きが小さい  
+共産党と社民党: 傾きが大きい  
+
+```{r}
+data_2005 %<>% mutate(LDPandDPJ = ifelse(party_jpn %in% c("自民党", "民主党"), 1, 0))
+```
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv, y = voteshare, color = party_jpn)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(x = "一人当たりの選挙費用", y = "得票率")
+```
+
+
+
+
