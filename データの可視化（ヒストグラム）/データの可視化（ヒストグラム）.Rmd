@@ -90,7 +90,7 @@ data_2005 %>%
   geom_histogram(aes(y = ..density..), 
                  binwidth = bw,
                  color = "black", fill = "grey") +
-  labs(x = "有権者1人あたりに使う選挙費用") 
+  labs(x = "有権者1人あたりに使う選挙費用", title = "選挙費用のヒストグラム") 
 ```
 
 ## 各政党ごとに確率密度を描写する
@@ -106,7 +106,9 @@ data_2005 %>%
   geom_histogram(aes(y = ..density..), 
                  binwidth = bw,
                  color = "black", fill = "grey") +
-  geom_density(aes(fill = party_jpn), alpha = .1) 
+  geom_density(aes(fill = party_jpn), alpha = .1) +
+  labs(x = "有権者1人あたりに使う選挙費用", title = "選挙費用のヒストグラム") +
+  theme(legend.title = element_blank())
 ```
 
 ## 政党ごとに層化した散布図
@@ -124,7 +126,8 @@ data_2005 %>%
   ggplot(aes(x = exppv, y = voteshare, color = party_jpn)) +
   geom_point() +
   geom_smooth(method = "lm") +
-  labs(x = "一人当たりの選挙費用", y = "得票率")
+  labs(x = "一人当たりの選挙費用", y = "得票率", title = "選挙費用と得票率の散布図") +
+  theme(legend.title = element_blank())
 ```
 
 
