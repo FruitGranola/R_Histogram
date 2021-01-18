@@ -48,7 +48,7 @@ data <- read_csv("Data/House_of_Councilors_1996_2017.csv")
 names(data)
 ```
 
-# 2015年にデータを絞る
+# 2005年にデータを絞る
 
 ```{r}
 data_2005 <- data %>% filter(year == 2005) # 2005年のデータに絞る
