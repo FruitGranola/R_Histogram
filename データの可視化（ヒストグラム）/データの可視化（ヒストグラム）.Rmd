@@ -118,10 +118,6 @@ data_2005 %>%
 共産党と社民党: 傾きが大きい  
 
 ```{r}
-data_2005 %<>% mutate(LDPandDPJ = ifelse(party_jpn %in% c("自民党", "民主党"), 1, 0))
-```
-
-```{r}
 data_2005 %>% 
   ggplot(aes(x = exppv, y = voteshare, color = party_jpn)) +
   geom_point() +
