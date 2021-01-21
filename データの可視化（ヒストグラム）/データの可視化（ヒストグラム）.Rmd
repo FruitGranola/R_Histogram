@@ -2,26 +2,17 @@
 title: "データの可視化（ヒストグラム）"
 date: "`r Sys.Date()`"
 author: Sort
-output:
-  rmdformats::readthedown:
-    highlight: kate
-    self_contained: true
+output: html_document
 ---
 
-```{css, echo=FALSE}
-#content {
-    max-width: 100%;
-}
-```
-
 ```{r, include=FALSE}
-library(rmdformats)
-
 knitr::opts_chunk$set(warning = F,
                       message = F,
                       comment = "",
                       fig.align = "center")
 ```
+
+この記事のコードをまとめたものは[Github](https://github.com/FruitGranola?tab=repositories)にあります。
 
 # 使用するパッケージ
 
