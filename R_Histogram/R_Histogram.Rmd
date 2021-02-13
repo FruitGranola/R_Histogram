@@ -1,0 +1,247 @@
+---
+title: "R_Histogram"
+date: "`r Sys.Date()`"
+author: Sort
+output: html_document
+---
+
+# ヒストグラムの描き方
+
+```{r}
+knitr::opts_chunk$set(warning = F,
+                      message = F,
+                      comment = "",
+                      fig.align = "center",
+                      fig.width = 8,
+                      fig.height = 5)
+```
+
+# 使用するパッケージ
+
+準備していないパッケージは`install.packages("packge_name")`でインストールする。
+
+```{r}
+# 使用するパッケージ
+library(tidyverse) # データの整形から可視化まで
+library(magrittr) # パイプ処理を使いこなすせ！
+
+# ggplot2 の theme をあらかじめ設定しておく
+theme_set(theme_minimal(base_size = 15))
+```
+
+# データの読み込み
+
+今回使用するのは衆院選に出馬した各候補者のデータだ。
+
+1996年から2017年までのデータが詰まっている。
+
+```{r}
+data <- read_csv("./data/House_of_Councilors_1996_2017.csv") # 1996年～2017年までの衆院選データ
+```
+
+## データ内の変数名を確認する
+
+どんな変数があるか見てみよう。
+
+```{r}
+names(data)
+```
+
+各変数が意味するものは以下のようになっている。
+
+|変数名    |内容    　|備考                                  |
+|----------|----------|--------------------------------------|
+|year      |実施年  　|                                      |
+|ku        |都道府県  |                                      |
+|kun       |区域    　|                                      |
+|status    |現職か否か|0 = 新人・元, 1 = 現職                |
+|name      |名前      |                                      |
+|party     |所属政党  |ローマ字での略語                      |
+|party_code|所属政党  |数字で通し番号                        |
+|previous  |当選回数  |                                      |
+|wl        |当落結果　|0 = 落選, 1 = 当選, 2 = 復活当選      |
+|voteshare |得票率    |単位: %                               |
+|age       |年齢      |                                      |
+|nocand    |候補者数  |                                      |
+|rank      |順位　　　|                                      |
+|vote      |得票数　　|                                      |
+|eligible  |有権者数  |                                      |
+|turnout	 |投票率    |単位: %                               |
+|exp	     |選挙費用  |単位: 円                              |
+|expm      |選挙費用　|単位: 百万円                          |
+|vs	       |得票割合  |小数で表記                            |
+|exppv     |選挙費用  |単位: 円（有権者一人当たりの選挙費用）|
+|smd	     |当落      |0 = 落選, 1 = 当選                    |
+|party_jpn |所属政党　|日本語                                |
+
+## データの整形
+
+今回は選挙費用(exppv)を使ってヒストグラムを描いていく。
+
+ヒストグラムはデータの分布を確認するために使用する。
+
+今回は選挙データを使用するので、各政党の選挙費用(exppv)の分布を可視化してみる。
+
+```{r}
+data %<>% 
+  select(year, party_jpn, exppv) %>% # 使用する変数を抽出
+  filter(party_jpn %in% c("自民党", "民主党", "公明党")) %>% # 簡単のため、政党を絞る
+  as.data.frame() %>% # 一応
+  drop_na() # naを落とす
+```
+
+また、2005年の衆院選データを可視化することとする。
+
+```{r}
+data_2005 <- data %>% 
+  filter(year == 2005)
+```
+
+# スタージェスの公式
+
+階級の幅を決めるときに、スタージェスの公式というものを使うらしい...
+
+```{r}
+# スタージェスの公式: k (階級の数) = 1 + log₂n (n = データ数)
+bw <- round(1 + log2(count(data_2005)), 0) %>% as.integer()
+bw
+```
+# ヒストグラム
+## 普通のヒストグラム
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv)) +
+  geom_histogram(aes(y = ..density..), # ..density..で密度を出力する
+                 binwidth = bw) + # 階級の数を設定する
+  labs(x = "有権者1人あたりに使う選挙費用", # X軸のラベル名を変える
+       y = "密度", # Y軸のラベル名を変える
+       title = "選挙費用のヒストグラム") # グラフにタイトルを付ける
+```
+
+## binの色を変える
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = bw,
+                 fill = "orange", # binの中の色を変える
+                 color = "black") + # binの枠の色を変える
+  labs(x = "有権者1人あたりに使う選挙費用", 
+       y = "密度", 
+       title = "選挙費用のヒストグラム") 
+```
+
+## 政党別に色を付ける
+
+重なって見えずらいので、お勧めしない。
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv)) +
+  geom_histogram(aes(y = ..density..,
+                     fill = party_jpn), # party_jpnの値によって色を変える
+                 binwidth = bw,
+                 color = "black",
+                 show.legend = F) + # show.legend = Fでlegendを非表示に
+  labs(x = "有権者1人あたりに使う選挙費用", 
+       y = "密度", 
+       title = "選挙費用のヒストグラム") 
+```
+
+## 政党別に可視化
+
+政党別に分布を見たいならば、こちらのほうが良い。
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv)) +
+  geom_histogram(aes(y = ..density..,
+                     fill = party_jpn), 
+                 binwidth = bw,
+                 show.legend = F) + 
+  labs(x = "有権者1人あたりに使う選挙費用", 
+       y = "密度", 
+       title = "選挙費用のヒストグラム") +
+  facet_wrap(~party_jpn) # party_jpnの値毎に密度曲線を描く
+```
+
+# 密度曲線
+## 普通の密度曲線
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv)) +
+  geom_density(fill = "gray") + 
+  labs(x = "有権者1人あたりに使う選挙費用", # X軸のラベル名を変える
+       y = "密度", # Y軸のラベル名を変える
+       title = "選挙費用の密度曲線") # グラフにタイトルを付ける
+```
+
+## 曲線の色を変える
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv)) +
+  geom_density(fill = "orange", # 曲線の中の色を変える
+               color = "black") + # 線の色を変える
+  labs(x = "有権者1人あたりに使う選挙費用", 
+       y = "密度", 
+       title = "選挙費用の密度曲線") 
+```
+
+## 政党別に色を付ける
+
+ヒストグラムと違い、`alpha =`を設定すれば見やすい。
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv)) +
+  geom_density(aes(fill = party_jpn), # party_jpnの値によって色を変える
+               alpha = .3,
+               show.legend = F) + # show.legend = Fでlegendを非表示に
+  labs(x = "有権者1人あたりに使う選挙費用", 
+       y = "密度", 
+       title = "選挙費用の密度曲線") 
+```
+
+## 政党別に可視化
+
+こちらも見やすい。
+
+`scales = `に`free`や`free_x`、`free_y`を接待することでメモリを政党別に自動調整できる。
+
+ただ、正確に比較する際には使わないことが多い。
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv)) +
+  geom_density(aes(fill = party_jpn),
+               show.legend = F) + 
+  labs(x = "有権者1人あたりに使う選挙費用", 
+       y = "密度", 
+       title = "選挙費用の密度曲線",
+       fill = "政党名") +
+  facet_wrap(~party_jpn) # party_jpnの値毎に密度曲線を描く
+```
+
+# ヒストグラムと密度曲線を一緒に表示
+
+ヒストグラムで全体の分布を表示し、密度曲線で政党別を表示した。
+
+```{r}
+data_2005 %>% 
+  ggplot(aes(x = exppv)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = bw) +
+  geom_density(aes(fill = party_jpn),
+               alpha = .3) +
+  labs(x = "有権者1人あたりに使う選挙費用",
+       title = "選挙費用のヒストグラムと密度曲線",
+       fill = "政党名") # fill = によって生成されたlegendの名前を変更
+```
+
+<HR>
+
+この記事のコードをまとめたものは[Github](https://github.com/FruitGranola/R_Histogram)にあります。
